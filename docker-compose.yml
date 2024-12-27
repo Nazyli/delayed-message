@@ -1,0 +1,42 @@
+version: '3'
+services:
+  nsqlookupd:
+    image: nsqio/nsq
+    command: /nsqlookupd
+    ports:
+      - "4160:4160"  # Memetakan port 4160 ke host
+      - "4161:4161"  # Memetakan port 4161 ke host
+
+  nsqd:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160
+    depends_on:
+      - nsqlookupd
+    ports:
+      - "4150:4150"  # Memetakan port 4150 ke host
+      - "4151:4151"  # Memetakan port 4151 ke host
+
+  nsqadmin:
+    image: nsqio/nsq
+    command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
+    depends_on:
+      - nsqlookupd
+    ports:
+      - "4171:4171"  # Memetakan port 4171 ke host
+
+  rabbitmq:
+    build: ./rabbitmq  # Menggunakan Dockerfile yang telah diubah
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"  # Memetakan port 5672 untuk RabbitMQ
+      - "15672:15672"  # Memetakan port 15672 untuk RabbitMQ Management Console
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+
+volumes:
+  rabbitmq-data:
+    driver: local
