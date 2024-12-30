@@ -3,40 +3,118 @@ services:
   nsqlookupd:
     image: nsqio/nsq
     command: /nsqlookupd
+    hostname: nsqlookupd
     ports:
-      - "4160:4160"  # Memetakan port 4160 ke host
-      - "4161:4161"  # Memetakan port 4161 ke host
+      - "4160:4160"
+      - "4161:4161"
+    networks:
+      - nsq_network
 
   nsqd:
     image: nsqio/nsq
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=127.0.0.1
+    hostname: nsqd
     depends_on:
       - nsqlookupd
     ports:
-      - "4150:4150"  # Memetakan port 4150 ke host
-      - "4151:4151"  # Memetakan port 4151 ke host
+      - "4150:4150"
+      - "4151:4151"
+    networks:
+      - nsq_network
 
   nsqadmin:
     image: nsqio/nsq
-    command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
+    command: /nsqadmin --nsqd-http-address=nsqd:4151
+    hostname: nsqadmin
     depends_on:
       - nsqlookupd
     ports:
-      - "4171:4171"  # Memetakan port 4171 ke host
+      - "4171:4171"
+    networks:
+      - nsq_network
+
 
   rabbitmq:
-    build: ./rabbitmq  # Menggunakan Dockerfile yang telah diubah
+    build: ./rabbitmq
     container_name: rabbitmq
+    hostname: rabbitmq
     ports:
-      - "5672:5672"  # Memetakan port 5672 untuk RabbitMQ
-      - "15672:15672"  # Memetakan port 15672 untuk RabbitMQ Management Console
+      - "5672:5672"
+      - "15672:15672"
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-
+    networks:
+      - nsq_network
 
 volumes:
   rabbitmq-data:
     driver: local
+
+networks:
+  nsq_network:
+    driver: bridge
+
+
+
+
+
+#version: '3'
+#services:
+#  nsqlookupd:
+#    image: nsqio/nsq
+#    command: /nsqlookupd
+#    hostname: nsqlookupd  # Menambahkan hostname
+#    ports:
+#      - "4160:4160"
+#      - "4161:4161"
+#    networks:
+#      - nsq_network
+#
+#  nsqd:
+#    image: nsqio/nsq
+#    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=127.0.0.1
+#    hostname: nsqd  # Menambahkan hostname
+#    depends_on:
+#      - nsqlookupd
+#    ports:
+#      - "4150:4150"
+#      - "4151:4151"
+#    networks:
+#      - nsq_network
+#
+#  nsqadmin:
+#    image: nsqio/nsq
+#    command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
+#    hostname: nsqadmin  # Menambahkan hostname
+#    depends_on:
+#      - nsqlookupd
+#    ports:
+#      - "4171:4171"
+#    networks:
+#      - nsq_network
+#
+#  rabbitmq:
+#    build: ./rabbitmq
+#    container_name: rabbitmq
+#    hostname: rabbitmq  # Menambahkan hostname
+#    ports:
+#      - "5672:5672"
+#      - "15672:15672"
+#    environment:
+#      - RABBITMQ_DEFAULT_USER=guest
+#      - RABBITMQ_DEFAULT_PASS=guest
+#    volumes:
+#      - rabbitmq-data:/var/lib/rabbitmq
+#    networks:
+#      - nsq_network
+#
+#volumes:
+#  rabbitmq-data:
+#    driver: local
+#
+#networks:
+#  nsq_network:
+#    driver: bridge

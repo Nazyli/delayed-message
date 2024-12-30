@@ -14,11 +14,6 @@ import java.util.concurrent.TimeoutException;
 
 @Service
 public class RabbitMQService {
-
-    private static final String EXCHANGE_NAME = "delayed_exchange";
-    private static final String QUEUE_NAME = "delayed_queue";
-    private static final String ROUTING_KEY = "delayed_key";
-
     public void listen() throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("127.0.0.1");
@@ -31,7 +26,7 @@ public class RabbitMQService {
         final Channel channel;
         try {
             connection = factory.newConnection();
-            channel = connection.createChannel();  // channel menjadi final
+            channel = connection.createChannel();
 
             // Deklarasi Exchange dan Queue
             Map<String, Object> args = new HashMap<>();
@@ -48,31 +43,28 @@ public class RabbitMQService {
             // Konsumsi pesan dari queue secara terus-menerus
             channel.basicConsume(queueName, false, (consumerTag, delivery) -> {
                 String message = new String(delivery.getBody(), "UTF-8");
-                System.out.println("Pesan diterima: " + message +" : Pada : " + new Date());
+                System.out.println("RabbitMQ | Pada " + new Date() + " | Pesan diterima : " + message);
 
                 // Proses pesan dan Ack setelah selesai
                 try {
                     if (channel.isOpen()) {
-                        // Proses pesan (contoh: print pesan atau proses lainnya)
-                        System.out.println("Memproses pesan: " + message);
-
                         // Ack pesan setelah diproses
                         channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                        System.out.println("Pesan berhasil di-acknowledge.");
+                        System.out.println("RabbitMQ | Pesan berhasil di-acknowledge.");
                     } else {
-                        System.out.println("Channel sudah tertutup, tidak bisa ack pesan.");
+                        System.out.println("RabbitMQ | Channel sudah tertutup, tidak bisa ack pesan.");
                     }
                 } catch (IOException e) {
-                    System.out.println("Gagal meng-ack pesan: " + e.getMessage());
+                    System.out.println("RabbitMQ | Gagal meng-ack pesan: " + e.getMessage());
                 }
             }, consumerTag -> {
                 // Menangani kasus jika consumer dibatalkan
-                System.out.println("Consumer dibatalkan: " + consumerTag);
+                System.out.println("RabbitMQ | Consumer dibatalkan: " + consumerTag);
             });
 
             // Tidak menutup channel atau connection di sini, biarkan listener terus berjalan
         } catch (IOException | TimeoutException e) {
-            System.out.println("Gagal koneksi ke RabbitMQ: " + e.getMessage());
+            System.out.println("RabbitMQ | Gagal koneksi ke RabbitMQ: " + e.getMessage());
         }
     }
 
@@ -102,7 +94,7 @@ public class RabbitMQService {
 
             // Kirim pesan ke delayed_exchange
             channel.basicPublish("delayed_exchange", "", props.build(), messageBodyBytes);
-            System.out.println("Pesan terkirim: " + message + " dengan delay: " + delayInMillis + "ms : Pada : " + new Date());
+            System.out.println("RabbitMQ | Pada " + new Date() + " | Pesan terkirim : " + message + " Delay " + delayInMillis + "ms");
         }
     }
 

@@ -56,6 +56,17 @@
 <!--			<groupId>org.springframework.boot</groupId>-->
 <!--			<artifactId>spring-boot-starter-amqp</artifactId>-->
 <!--		</dependency>-->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.5.13</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.github.brainlag/nsq-client -->
+		<dependency>
+			<groupId>com.github.brainlag</groupId>
+			<artifactId>nsq-client</artifactId>
+			<version>1.0.0.RC4</version>
+		</dependency>
 	</dependencies>
 
 	<build>
