@@ -17,7 +17,7 @@ public class RabbitMQStartupListener {
     @PostConstruct
     public void init() {
         try {
-            rabbitMQListener.listen();  // Mendengarkan pesan saat aplikasi dimulai
+            rabbitMQListener.listen();
         } catch (IOException | TimeoutException e) {
             e.printStackTrace();
         }

@@ -47,7 +47,7 @@ public class NsqMessageConsumer {
     }
 
     public void sendMessage(String message, int delay) throws Exception {
-        // Publish pesan dummy ke topik dan channel
+        // Publish dummy messages to topics and channels
         NSQProducer producer = new NSQProducer();
         producer.addAddress("localhost", 4150); // Alamat nsqd
         producer.start();

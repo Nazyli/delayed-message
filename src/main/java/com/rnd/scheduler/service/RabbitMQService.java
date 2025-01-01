@@ -4,7 +4,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Date;
@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-@Service
+@Component
 public class RabbitMQService {
     public void listen() throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
@@ -28,7 +28,7 @@ public class RabbitMQService {
             connection = factory.newConnection();
             channel = connection.createChannel();
 
-            // Deklarasi Exchange dan Queue
+            // Exchange and Queue Declaration
             Map<String, Object> args = new HashMap<>();
             args.put("x-delayed-type", "direct");
             channel.exchangeDeclare("delayed_exchange", "x-delayed-message", true, false, args);
@@ -37,18 +37,15 @@ public class RabbitMQService {
             channel.queueDeclare(queueName, true, false, false, null);
             channel.queueBind(queueName, "delayed_exchange", "");
 
-            // Menampilkan nama queue untuk debugging
             System.out.println("Mendengarkan pesan di queue: " + queueName);
 
-            // Konsumsi pesan dari queue secara terus-menerus
             channel.basicConsume(queueName, false, (consumerTag, delivery) -> {
                 String message = new String(delivery.getBody(), "UTF-8");
                 System.out.println("RabbitMQ | Pada " + new Date() + " | Pesan diterima : " + message);
 
-                // Proses pesan dan Ack setelah selesai
+                // Process message and Ack after completion
                 try {
                     if (channel.isOpen()) {
-                        // Ack pesan setelah diproses
                         channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                         System.out.println("RabbitMQ | Pesan berhasil di-acknowledge.");
                     } else {
@@ -58,18 +55,15 @@ public class RabbitMQService {
                     System.out.println("RabbitMQ | Gagal meng-ack pesan: " + e.getMessage());
                 }
             }, consumerTag -> {
-                // Menangani kasus jika consumer dibatalkan
                 System.out.println("RabbitMQ | Consumer dibatalkan: " + consumerTag);
             });
-
-            // Tidak menutup channel atau connection di sini, biarkan listener terus berjalan
         } catch (IOException | TimeoutException e) {
             System.out.println("RabbitMQ | Gagal koneksi ke RabbitMQ: " + e.getMessage());
         }
     }
 
 
-    public static void sendMessage(String message, int delayInMillis) throws IOException, TimeoutException {
+    public void sendMessage(String message, int delayInMillis) throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("127.0.0.1");
         factory.setPort(5672);
@@ -80,19 +74,19 @@ public class RabbitMQService {
         try (Connection connection = factory.newConnection();
              Channel channel = connection.createChannel()) {
 
-            // Deklarasikan delayed exchange jika belum ada
+            // Declare a delayed exchange if it doesn't exist
             Map<String, Object> args = new HashMap<>();
-            args.put("x-delayed-type", "direct");  // Tentukan jenis exchange yang digunakan
+            args.put("x-delayed-type", "direct");  // exchange type
             channel.exchangeDeclare("delayed_exchange", "x-delayed-message", true, false, args);
 
-            // Kirim pesan dengan delay
+            // Send messages with delay
             byte[] messageBodyBytes = message.getBytes("UTF-8");
             Map<String, Object> headers = new HashMap<>();
-            headers.put("x-delay", delayInMillis);  // Tentukan waktu delay pesan
+            headers.put("x-delay", delayInMillis);
 
             AMQP.BasicProperties.Builder props = new AMQP.BasicProperties.Builder().headers(headers);
 
-            // Kirim pesan ke delayed_exchange
+            // Send a message to delayed_exchange
             channel.basicPublish("delayed_exchange", "", props.build(), messageBodyBytes);
             System.out.println("RabbitMQ | Pada " + new Date() + " | Pesan terkirim : " + message + " Delay " + delayInMillis + "ms");
         }
